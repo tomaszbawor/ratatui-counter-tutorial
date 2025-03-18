@@ -13,7 +13,7 @@ use ratatui::{
 
 fn main() -> io::Result<()> {
     let mut terminal = ratatui::init();
-    let mut app_result = App::default().run(&mut terminal);
+    let app_result = App::default().run(&mut terminal);
     ratatui::restore();
     app_result
 }
@@ -58,7 +58,9 @@ impl App {
     }
 
     fn decrement_counter(&mut self) {
-        self.counter -= 1;
+        if self.counter > 0 {
+            self.counter -= 1;
+        }
     }
 
     fn increment_counter(&mut self) {

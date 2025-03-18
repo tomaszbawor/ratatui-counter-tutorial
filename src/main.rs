@@ -18,10 +18,21 @@ fn main() -> io::Result<()> {
     app_result
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct App {
-    counter: u32,
     exit: bool,
+    menu_items: Vec<&'static str>,
+    active_menu_item: usize,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self {
+            exit: Default::default(),
+            menu_items: vec!["One", "Two", "Three"],
+            active_menu_item: 0,
+        }
+    }
 }
 
 impl App {
@@ -51,20 +62,26 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
-            KeyCode::Left => self.decrement_counter(),
-            KeyCode::Right => self.increment_counter(),
+            KeyCode::Up => self.menu_up(),
+            KeyCode::Down => self.menu_down(),
             _ => {}
         }
     }
 
-    fn decrement_counter(&mut self) {
-        if self.counter > 0 {
-            self.counter -= 1;
+    fn menu_up(&mut self) {
+        if self.active_menu_item == 0 {
+            self.active_menu_item = self.menu_items.len() - 1;
+        } else {
+            self.active_menu_item -= 1;
         }
     }
 
-    fn increment_counter(&mut self) {
-        self.counter += 1;
+    fn menu_down(&mut self) {
+        if self.active_menu_item == (self.menu_items.len() - 1) {
+            self.active_menu_item = 0;
+        } else {
+            self.active_menu_item += 1;
+        }
     }
 
     fn exit(&mut self) {
@@ -77,26 +94,31 @@ impl Widget for &App {
     where
         Self: Sized,
     {
-        let title = Line::from(" Counter App Tutorial ".bold());
-        let instructions = Line::from(vec![
-            " Decrement ".into(),
-            "<Left>".blue().bold(),
-            " Increment ".into(),
-            "<Right>".blue().bold(),
-            " Quit ".into(),
-            "<Q> ".blue().bold(),
-        ]);
+        let title = Line::from(" Test Application Main Menu ".bold());
+
+        let instructions = Line::from(vec![" Quit ".into(), "<Q> ".blue().bold()]);
+
         let block = Block::bordered()
             .title(title.centered())
             .title_bottom(instructions.centered())
             .border_set(border::THICK);
 
-        let counter_text = Text::from(vec![Line::from(vec![
-            "Value: ".into(),
-            self.counter.to_string().yellow(),
-        ])]);
+        let menu_lines: Vec<Line> = self
+            .menu_items
+            .iter()
+            .enumerate()
+            .map(|(i, menu_item)| {
+                let mut line = Line::from(*menu_item);
+                if self.active_menu_item == i {
+                    line = line.bold().red();
+                }
+                line
+            })
+            .collect();
 
-        Paragraph::new(counter_text)
+        let menu_text = Text::from(menu_lines);
+
+        Paragraph::new(menu_text)
             .centered()
             .block(block)
             .render(area, buf);
@@ -108,7 +130,6 @@ mod tests {
     use super::*;
     use ratatui::style::Style;
 
-    #[test]
     fn render() {
         let app = App::default();
         let mut buf = Buffer::empty(Rect::new(0, 0, 50, 4));
@@ -135,11 +156,12 @@ mod tests {
     #[test]
     fn handle_key_event() -> io::Result<()> {
         let mut app = App::default();
-        app.handle_key_event(KeyCode::Right.into());
-        assert_eq!(app.counter, 1);
 
-        app.handle_key_event(KeyCode::Left.into());
-        assert_eq!(app.counter, 0);
+        app.handle_key_event(KeyCode::Down.into());
+        assert_eq!(app.active_menu_item, 1);
+
+        app.handle_key_event(KeyCode::Up.into());
+        assert_eq!(app.active_menu_item, 0);
 
         let mut app = App::default();
         app.handle_key_event(KeyCode::Char('q').into());

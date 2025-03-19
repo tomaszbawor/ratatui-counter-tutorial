@@ -62,8 +62,8 @@ impl App {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
-            KeyCode::Up => self.menu_up(),
-            KeyCode::Down => self.menu_down(),
+            KeyCode::Up | KeyCode::Char('j') => self.menu_up(),
+            KeyCode::Down | KeyCode::Char('k') => self.menu_down(),
             _ => {}
         }
     }
